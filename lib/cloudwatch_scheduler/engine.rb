@@ -11,10 +11,16 @@ module CloudwatchScheduler
         # Explicitly register this worker, because Shoryuken expects the message
         # attributes to specify the job class, and these jobs are produced by
         # Cloudwatch Events, which provide no way to set message attributes
-        Shoryuken.worker_registry.register_worker(
-          CloudwatchScheduler::Job.queue_name,
-          ActiveJob::QueueAdapters::ShoryukenAdapter::JobWrapper
-        )
+        #
+        # Shoryuken 7 moved JobWrapper out of the ActiveJob adapter namespace
+        job_wrapper =
+          if defined?(Shoryuken::ActiveJob::JobWrapper)
+            Shoryuken::ActiveJob::JobWrapper
+          else
+            ActiveJob::QueueAdapters::ShoryukenAdapter::JobWrapper
+          end
+
+        Shoryuken.worker_registry.register_worker(CloudwatchScheduler::Job.queue_name, job_wrapper)
 
         # Load the configuration
         require Rails.root.join("config/cloudwatch_schedule").to_s
